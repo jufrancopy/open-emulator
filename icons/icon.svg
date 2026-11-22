@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#141a2e"/>
+      <stop offset="100%" stop-color="#090c14"/>
+    </linearGradient>
+    <linearGradient id="pad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6c5ce7"/>
+      <stop offset="100%" stop-color="#00cec9"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect x="44" y="138" width="424" height="236" rx="118" fill="#1e2742" stroke="url(#pad)" stroke-width="14"/>
+  <!-- D-Pad -->
+  <rect x="128" y="206" width="32" height="100" rx="8" fill="#e2e8f0"/>
+  <rect x="94" y="240" width="100" height="32" rx="8" fill="#e2e8f0"/>
+  <circle cx="144" cy="256" r="10" fill="#94a3b8"/>
+  <!-- Select / Start -->
+  <rect x="220" y="256" width="28" height="12" rx="6" transform="rotate(-25 234 262)" fill="#64748b"/>
+  <rect x="262" y="256" width="28" height="12" rx="6" transform="rotate(-25 276 262)" fill="#64748b"/>
+  <!-- Action buttons -->
+  <circle cx="368" cy="216" r="22" fill="#38bdf8"/>
+  <circle cx="410" cy="256" r="22" fill="#f43f5e"/>
+  <circle cx="368" cy="296" r="22" fill="#facc15"/>
+  <circle cx="326" cy="256" r="22" fill="#4ade80"/>
+</svg>

@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# ROMs (never commit copyrighted game files)
+roms/*
+!roms/LEEME.txt
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/

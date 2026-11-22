@@ -1,0 +1,21 @@
+CARPETA DE ROMS - OPEN EMULATOR
+=================================
+
+Coloca aqui tus archivos ROM de respaldo o juegos homebrew.
+Cuando ejecutes iniciar_emulador.bat en tu PC, tu tablet Lenovo 11
+los detectara automaticamente por Wi-Fi en la seccion "Desde mi PC".
+
+Extensiones soportadas automaticamente:
+- SNES:       .sfc, .smc, .fig, .swc
+- NES:        .nes, .fds, .unif
+- GBA:        .gba
+- Game Boy:   .gb, .gbc
+- Nintendo 64:.n64, .z64, .v64
+- Nintendo DS:.nds
+- Sega MD:    .md, .gen, .smd
+- Master Sys: .sms, .gg
+- PS1:        .chd, .pbp, .cue, .bin, .iso
+- Arcade/ZIP: .zip (detecta automaticamente la consola dentro del ZIP)
+
+Tambien puedes cargar ROMs directamente desde el almacenamiento interno
+de tu tablet Lenovo 11 tocando el boton "+ Agregar ROMs".

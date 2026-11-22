@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Open Emulator — Jugando</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #05070d;
+      color: #f8fafc;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      touch-action: none;
+    }
+    #game {
+      width: 100%;
+      height: 100%;
+    }
+    #boot-screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      background: radial-gradient(circle at center, #131b31 0%, #05070d 75%);
+      z-index: 10;
+      text-align: center;
+      padding: 24px;
+    }
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 4px solid rgba(124, 92, 255, 0.25);
+      border-top-color: #00cec9;
+      animation: spin 0.85s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    #boot-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+    #boot-sub {
+      font-size: 0.9rem;
+      color: #94a3b8;
+      max-width: 440px;
+    }
+    #error-box {
+      display: none;
+      margin-top: 8px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: rgba(239, 68, 68, 0.16);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fecaca;
+      max-width: 480px;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div id="boot-screen">
+    <div class="spinner" id="spinner"></div>
+    <div id="boot-title">Preparando consola...</div>
+    <div id="boot-sub">Cargando núcleo WebAssembly y controles táctiles</div>
+    <div id="error-box"></div>
+  </div>
+  <div id="game"></div>
+
+  <script>
+    let activeBlobUrl = null;
+    let launched = false;
+
+    function showError(msg) {
+      document.getElementById('spinner').style.display = 'none';
+      document.getElementById('boot-title').textContent = 'No se pudo iniciar el juego';
+      const box = document.getElementById('error-box');
+      box.style.display = 'block';
+      box.textContent = msg;
+    }
+
+    /**
+     * Ergonomic touch layout tuned for 11-inch landscape tablets (Lenovo Tab 11).
+     * Places D-Pad & face buttons comfortably in the lower thumb arcs,
+     * with L/R triggers above and Start/Select centered near the bottom.
+     */
+    function buildTablet11Controls(core) {
+      const base = [
+        {
+          type: 'dpad',
+          location: 'left',
+          left: '4%',
+          top: '54%',
+          joystickInput: false,
+          inputValues: [4, 5, 6, 7]
+        },
+        {
+          type: 'button',
+          text: 'SELECT',
+          id: 'select',
+          location: 'bottom',
+          left: '38%',
+          bold: true,
+          input_value: 2
+        },
+        {
+          type: 'button',
+          text: 'START',
+          id: 'start',
+          location: 'bottom',
+          left: '54%',
+          bold: true,
+          input_value: 3
+        }
+      ];
+
+      // 2-button systems (NES, GB, SMS)
+      if (core === 'nes' || core === 'gb' || core === 'segaMS') {
+        return [
+          ...base,
+          { type: 'button', text: 'B', id: 'b', location: 'right', left: '72%', top: '62%', fontSize: 28, bold: true, input_value: 0 },
+          { type: 'button', text: 'A', id: 'a', location: 'right', left: '84%', top: '54%', fontSize: 28, bold: true, input_value: 8 }
+        ];
+      }
+
+      // GBA (A, B, L, R)
+      if (core === 'gba') {
+        return [
+          ...base,
+          { type: 'button', text: 'L', id: 'l', location: 'left', left: '4%', top: '22%', fontSize: 24, bold: true, input_value: 10 },
+          { type: 'button', text: 'R', id: 'r', location: 'right', left: '84%', top: '22%', fontSize: 24, bold: true, input_value: 11 },
+          { type: 'button', text: 'B', id: 'b', location: 'right', left: '72%', top: '62%', fontSize: 28, bold: true, input_value: 0 },
+          { type: 'button', text: 'A', id: 'a', location: 'right', left: '84%', top: '54%', fontSize: 28, bold: true, input_value: 8 }
+        ];
+      }
+
+      // 4-button + L/R systems (SNES, NDS, PS1, Genesis, Arcade)
+      if (core === 'snes' || core === 'nds' || core === 'psx' || core === 'segaMD' || core === 'arcade') {
+        return [
+          ...base,
+          { type: 'button', text: 'L', id: 'l', location: 'left', left: '4%', top: '22%', fontSize: 24, bold: true, input_value: 10 },
+          { type: 'button', text: 'R', id: 'r', location: 'right', left: '84%', top: '22%', fontSize: 24, bold: true, input_value: 11 },
+          { type: 'button', text: 'Y', id: 'y', location: 'right', left: '70%', top: '58%', fontSize: 26, bold: true, input_value: 1 },
+          { type: 'button', text: 'X', id: 'x', location: 'right', left: '78%', top: '46%', fontSize: 26, bold: true, input_value: 9 },
+          { type: 'button', text: 'B', id: 'b', location: 'right', left: '78%', top: '70%', fontSize: 26, bold: true, input_value: 0 },
+          { type: 'button', text: 'A', id: 'a', location: 'right', left: '86%', top: '58%', fontSize: 26, bold: true, input_value: 8 }
+        ];
+      }
+
+      // For N64 (analog stick + C buttons + Z), EmulatorJS built-in layout is richer
+      return null;
+    }
+
+    function bootEmulator(cfg) {
+      if (launched) return;
+      launched = true;
+
+      const titleEl = document.getElementById('boot-title');
+      const subEl = document.getElementById('boot-sub');
+      titleEl.textContent = cfg.title || 'Cargando juego...';
+      subEl.textContent = `Iniciando núcleo ${cfg.core.toUpperCase()}... (la primera vez descarga el core desde CDN)`;
+
+      let gameUrl = cfg.romUrl;
+      if (cfg.blob) {
+        activeBlobUrl = URL.createObjectURL(cfg.blob);
+        gameUrl = activeBlobUrl;
+      }
+
+      const channel = cfg.cdnChannel === 'latest' ? 'latest' : 'stable';
+      const dataPath = `https://cdn.emulatorjs.org/${channel}/data/`;
+
+      window.EJS_player = '#game';
+      window.EJS_core = cfg.core;
+      window.EJS_gameName = cfg.title || 'Retro Game';
+      window.EJS_gameUrl = gameUrl;
+      window.EJS_pathtodata = dataPath;
+      window.EJS_color = '#7c5cff';
+      window.EJS_language = cfg.language || 'es-419';
+      window.EJS_startOnLoaded = cfg.startOnLoaded !== false;
+      window.EJS_threads = false;
+      window.EJS_AdUrl = '';
+
+      if (cfg.touchPreset === 'tablet11') {
+        const customPad = buildTablet11Controls(cfg.core);
+        if (customPad) {
+          window.EJS_VirtualGamepadSettings = customPad;
+        }
+      }
+
+      window.EJS_onGameStart = function () {
+        const boot = document.getElementById('boot-screen');
+        if (boot) boot.style.display = 'none';
+        window.parent.postMessage({ type: 'player-started' }, window.location.origin);
+        connectRemoteControllers();
+      };
+
+      let remoteSource = null;
+      function connectRemoteControllers() {
+        if (remoteSource || typeof EventSource === 'undefined') return;
+        try {
+          remoteSource = new EventSource('./api/remote/stream');
+          remoteSource.onmessage = (ev) => {
+            try {
+              const msg = JSON.parse(ev.data);
+              if (msg.type === 'input' && Array.isArray(msg.events)) {
+                const gm = window.EJS_emulator && window.EJS_emulator.gameManager;
+                if (gm && typeof gm.simulateInput === 'function') {
+                  for (const [idx, val] of msg.events) {
+                    gm.simulateInput(msg.player, idx, val);
+                  }
+                }
+              } else if (msg.type === 'players') {
+                window.parent.postMessage({ type: 'remote-players', players: msg.players }, window.location.origin);
+              }
+            } catch {}
+          };
+        } catch {}
+      }
+
+      const script = document.createElement('script');
+      script.src = dataPath + 'loader.js';
+      script.async = true;
+      script.onload = () => {
+        // Hide boot screen shortly after loader injects the player canvas/play button
+        setTimeout(() => {
+          const boot = document.getElementById('boot-screen');
+          if (boot) boot.style.display = 'none';
+        }, 900);
+      };
+      script.onerror = () => {
+        showError(
+          'No se pudo descargar el núcleo desde cdn.emulatorjs.org. ' +
+          'Verifica que tu tablet Lenovo 11 tenga conexión a internet la primera vez que abres cada consola.'
+        );
+      };
+      document.body.appendChild(script);
+    }
+
+    window.addEventListener('message', (event) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data && event.data.type === 'launch-rom') {
+        bootEmulator(event.data.payload);
+      }
+    });
+
+    window.addEventListener('beforeunload', () => {
+      if (activeBlobUrl) URL.revokeObjectURL(activeBlobUrl);
+    });
+
+    // Notify parent iframe is ready to receive the ROM payload
+    window.parent.postMessage({ type: 'player-ready' }, window.location.origin);
+  </script>
+</body>
+</html>

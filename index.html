@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0e17">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Open Emulator — Consola Retro para Lenovo Tab 11</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="brand">
+        <img src="./icons/icon.svg" alt="Open Emulator" class="brand-icon">
+        <div>
+          <h1 class="brand-title">Open Emulator</h1>
+          <p class="brand-sub">Multiconsola Retro · Lenovo Tab 11</p>
+        </div>
+      </div>
+
+      <nav class="nav-tabs" role="tablist" aria-label="Secciones principales">
+        <button class="nav-tab active" data-view="library" role="tab" aria-selected="true">
+          <span>🎮</span> Biblioteca
+        </button>
+        <button class="nav-tab" data-view="consoles" role="tab" aria-selected="false">
+          <span>🕹️</span> Consolas
+        </button>
+        <button class="nav-tab" data-view="settings" role="tab" aria-selected="false">
+          <span>⚙️</span> Mando y Ajustes
+        </button>
+        <button class="nav-tab" data-view="guide" role="tab" aria-selected="false">
+          <span>📱</span> Guía Lenovo 11
+        </button>
+      </nav>
+
+      <div class="topbar-actions">
+        <button id="gamepad-pill" class="pill pill-muted" title="Estado del mando Bluetooth/USB">
+          <span class="dot"></span>
+          <span id="gamepad-pill-text">Sin mando BT</span>
+        </button>
+        <button id="btn-install-pwa" class="btn btn-secondary hidden">
+          ⬇ Instalar App
+        </button>
+        <button id="btn-add-roms" class="btn btn-primary">
+          + Agregar ROMs
+        </button>
+      </div>
+    </header>
+
+    <!-- Hidden file input -->
+    <input id="rom-file-input" type="file" multiple class="hidden">
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- VIEW 1: LIBRARY -->
+      <section id="view-library" class="view active">
+        <div class="library-toolbar">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input id="search-input" type="search" placeholder="Buscar juego (ej. Mario, Donkey Kong, Prince of Persia)..." autocomplete="off">
+          </div>
+          <div class="toolbar-right">
+            <select id="sort-select" class="select-input" aria-label="Ordenar juegos">
+              <option value="recent">Jugados recientemente</option>
+              <option value="name">Nombre (A–Z)</option>
+              <option value="newest">Agregados recientemente</option>
+              <option value="system">Por consola</option>
+            </select>
+            <button id="btn-refresh-pc" class="btn btn-ghost" title="Buscar ROMs en la carpeta roms/ de la PC">
+              ↻ Sincronizar PC
+            </button>
+          </div>
+        </div>
+
+        <!-- System filter pills -->
+        <div id="filter-chips" class="filter-chips" role="group" aria-label="Filtrar por consola"></div>
+
+        <!-- Drag & drop / Quick import banner -->
+        <div id="dropzone" class="dropzone">
+          <div class="dropzone-left">
+            <div class="dropzone-icon">📂</div>
+            <div>
+              <strong>Carga tus juegos clásicos aquí</strong>
+              <p>Arrastra archivos ROM o toca para elegir desde tu tablet (SNES, NES, GBA, GB, N64, NDS, Genesis, PS1, Arcade, ZIP).</p>
+            </div>
+          </div>
+          <div class="dropzone-controls">
+            <select id="import-system-select" class="select-input" aria-label="Consola al importar">
+              <option value="auto">Auto-detectar consola</option>
+            </select>
+            <button id="btn-dropzone-pick" class="btn btn-primary">Elegir archivos</button>
+          </div>
+        </div>
+
+        <!-- Games Grid -->
+        <div id="games-grid" class="games-grid"></div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="empty-state hidden">
+          <div class="empty-emoji">🏆</div>
+          <h2>Tu consola está lista para jugar</h2>
+          <p>
+            Agrega tus archivos ROM de respaldo o juegos homebrew (<code>.sfc</code>, <code>.nes</code>, <code>.gba</code>, <code>.z64</code>, <code>.md</code>, <code>.zip</code>)
+            desde tu Lenovo 11 o colócalos en la carpeta <code>roms/</code> de tu PC.
+          </p>
+          <div class="empty-actions">
+            <button id="btn-empty-add" class="btn btn-primary btn-lg">+ Seleccionar ROMs ahora</button>
+            <button id="btn-empty-guide" class="btn btn-secondary btn-lg">Ver guía Lenovo 11</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 2: CONSOLES -->
+      <section id="view-consoles" class="view">
+        <div class="section-header">
+          <div>
+            <h2>Consolas Clásicas Soportadas</h2>
+            <p>10 sistemas listos con núcleos WebAssembly, guardado rápido (Save States), controles táctiles y mando Bluetooth.</p>
+          </div>
+        </div>
+        <div id="consoles-grid" class="consoles-grid"></div>
+      </section>
+
+      <!-- VIEW 3: SETTINGS & GAMEPAD -->
+      <section id="view-settings" class="view">
+        <div class="settings-layout">
+          <div class="card">
+            <h3>🎮 Controles y Experiencia en Lenovo 11</h3>
+            <div class="setting-row">
+              <div>
+                <strong>Diseño de controles táctiles</strong>
+                <p>El modo adaptativo de EmulatorJS permite mover y escalar cada botón en pantalla desde el ícono de engranaje al jugar.</p>
+              </div>
+              <select id="setting-touch-preset" class="select-input">
+                <option value="default">Adaptativo EmulatorJS (Recomendado)</option>
+                <option value="tablet11">Ergonómico Tablet 11" (Fijo)</option>
+              </select>
+            </div>
+
+            <div class="setting-row">
+              <div>
+                <strong>Pantalla completa automática</strong>
+                <p>Oculta barras de Android al iniciar un juego para aprovechar las 11 pulgadas completas.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="setting-auto-fullscreen">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="setting-row">
+              <div>
+                <strong>Iniciar juego automáticamente</strong>
+                <p>Arranca la consola directo sin esperar un segundo toque en el botón Play.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="setting-start-loaded">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="setting-row">
+              <div>
+                <strong>Canal de núcleos (EmulatorJS CDN)</strong>
+                <p>Usa <code>stable</code> para máxima estabilidad o <code>latest</code> para las mejoras más recientes.</p>
+              </div>
+              <select id="setting-cdn-channel" class="select-input">
+                <option value="stable">Estable (Recomendado)</option>
+                <option value="latest">Latest (Más reciente)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>🕹️ Probador de Mando Bluetooth / USB</h3>
+            <p class="muted">Conecta un mando Xbox, PlayStation, 8BitDo o genérico por Bluetooth a tu Lenovo 11 y presiona cualquier botón.</p>
+            <div id="gamepad-tester-box" class="tester-box">
+              <div id="tester-status" class="tester-status">Esperando mando... Presiona cualquier botón de tu control.</div>
+              <div id="tester-buttons" class="tester-buttons"></div>
+              <div id="tester-axes" class="tester-axes"></div>
+            </div>
+            <div class="tip-box">
+              <strong>Tip de navegación:</strong> En la biblioteca puedes moverte con el D-Pad / Stick, pulsar <strong>A</strong> para jugar y <strong>L1 / R1</strong> para cambiar de pestaña.
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>💾 Almacenamiento en tu Tablet</h3>
+            <p class="muted">Los juegos que agregas desde tu Lenovo 11 se guardan localmente en IndexedDB para que siempre estén disponibles.</p>
+            <div id="storage-info" class="storage-info">Calculando espacio usado...</div>
+            <div class="card-actions">
+              <button id="btn-clear-library" class="btn btn-danger">Vaciar biblioteca local</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 4: LENOVO 11 GUIDE -->
+      <section id="view-guide" class="view">
+        <div class="guide-grid">
+          <article class="card">
+            <h3>1. Abre Open Emulator en tu Lenovo Tab 11</h3>
+            <p>Asegúrate de que tu PC y tu tablet estén en el mismo Wi-Fi, abre <code>iniciar_emulador.bat</code> en Windows y escribe esta dirección en Chrome en tu tablet:</p>
+            <div id="lan-urls-box" class="code-box">Detectando dirección de red local...</div>
+          </article>
+
+          <article class="card">
+            <h3>2. Instálalo como App de Pantalla Completa</h3>
+            <ol class="guide-list">
+              <li>En tu Lenovo 11, abre la dirección en <strong>Google Chrome</strong>.</li>
+              <li>Toca el menú <strong>⋮</strong> arriba a la derecha y elige <strong>"Agregar a la pantalla principal"</strong> o <strong>"Instalar app"</strong>.</li>
+              <li>¡Listo! Tendrás el ícono de <strong>Open Emulator</strong> en tu tablet y se abrirá en horizontal a pantalla completa.</li>
+            </ol>
+          </article>
+
+          <article class="card">
+            <h3>3. Cómo cargar tus clásicos</h3>
+            <ul class="guide-list">
+              <li><strong>Desde tu PC por Wi-Fi:</strong> Copia tus archivos ROM dentro de la carpeta <code>roms/</code> del proyecto y presiona <strong>↻ Sincronizar PC</strong> en la tablet.</li>
+              <li><strong>Directo en la tablet:</strong> Toca <strong>+ Agregar ROMs</strong> y selecciona archivos desde <em>Descargas</em> o tu tarjeta microSD.</li>
+              <li><strong>Consolas clave:</strong> SNES (<code>.sfc/.smc</code>) para <em>Super Mario World, Super Mario Kart, Donkey Kong Country y Prince of Persia</em>; NES (<code>.nes</code>) y N64 (<code>.z64</code>) para el resto de clásicos.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>4. Controles, Guardado y Trucos</h3>
+            <ul class="guide-list">
+              <li><strong>Guardar partida en cualquier momento:</strong> Durante el juego toca la barra inferior del emulador y usa <strong>Guardar Estado / Cargar Estado</strong>.</li>
+              <li><strong>Ajustar botones táctiles:</strong> Toca el ícono de engranaje dentro del emulador → <em>Controles táctiles</em> para mover o agrandar los botones a la medida de tus pulgares.</li>
+              <li><strong>Mando Bluetooth:</strong> Empareja un control Xbox, PS4/PS5 o 8BitDo en Ajustes → Bluetooth de tu Lenovo 11 y funcionará al instante.</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- FULLSCREEN PLAYER OVERLAY -->
+  <div id="player-overlay" class="player-overlay hidden" role="dialog" aria-modal="true" aria-label="Reproductor de consola">
+    <div id="player-hud" class="player-hud">
+      <div class="hud-left">
+        <button id="btn-exit-game" class="btn btn-secondary btn-sm">← Biblioteca</button>
+        <div class="hud-meta">
+          <span id="hud-system-badge" class="badge">SNES</span>
+          <strong id="hud-game-title">Juego</strong>
+        </div>
+      </div>
+      <div class="hud-right">
+        <a href="./controller.html" target="_blank" class="btn btn-ghost btn-sm" title="Abrir mando remoto en celulares (/controller.html)">📱 Mandos (1–4J)</a>
+        <button id="btn-restart-game" class="btn btn-ghost btn-sm" title="Reiniciar consola">↻ Reiniciar</button>
+        <button id="btn-fullscreen-game" class="btn btn-ghost btn-sm" title="Pantalla completa">⛶ Pantalla completa</button>
+        <button id="btn-hide-hud" class="btn btn-ghost btn-sm" title="Ocultar barra superior">▲ Ocultar</button>
+      </div>
+    </div>
+
+    <button id="btn-show-hud" class="hud-restore hidden" title="Mostrar menú de consola">▼ Menú</button>
+
+    <div id="player-frame-container" class="player-frame-container"></div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
